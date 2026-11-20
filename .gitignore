@@ -1,0 +1,12 @@
+node_modules/
+.env
+.env.*
+!.env.example
+logs/
+reports/
+allure-results/
+allure-report/
+coverage/
+*.log
+window.xml
+apps/*.apk
