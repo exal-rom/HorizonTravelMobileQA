@@ -3,6 +3,7 @@ const isCI = process.env.CI === 'true';
 
 export const config = {
     runner: 'local',
+    autoXvfb: false,
 
     specs: ['./test/specs/**/*.js'],
 
