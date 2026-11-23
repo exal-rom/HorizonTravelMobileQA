@@ -4,6 +4,9 @@
 name: HorizonTravel Mobile QA
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
