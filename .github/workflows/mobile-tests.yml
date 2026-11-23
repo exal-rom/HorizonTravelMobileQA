@@ -1,0 +1,163 @@
+
+
+
+name: HorizonTravel Mobile QA
+
+on:
+  workflow_dispatch:
+
+jobs:
+  mobile-tests:
+    name: Android Appium Tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: horizon
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ${{ secrets.CI_DB_PASSWORD }}
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d horizon"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout Mobile QA repository
+        uses: actions/checkout@v4
+
+      - name: Checkout Android repository
+        uses: actions/checkout@v4
+        with:
+          repository: exal-rom/HorizonTravelAndroid
+          path: android
+
+      - name: Checkout Backend repository
+        uses: actions/checkout@v4
+        with:
+          repository: exal-rom/HorizonTravelBackend
+          path: backend
+
+      - name: Set up Java 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: gradle
+          cache-dependency-path: |
+            android/**/*.gradle.kts
+            android/gradle/libs.versions.toml
+            android/gradle/wrapper/gradle-wrapper.properties
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Build Spring Boot backend
+        working-directory: backend
+        env:
+          SPRING_PROFILES_ACTIVE: test
+          DB_USERNAME: postgres
+          DB_PASSWORD: ${{ secrets.CI_DB_PASSWORD }}
+        run: mvn -B -DskipTests package
+
+      - name: Start Spring Boot backend
+        working-directory: backend
+        env:
+          SPRING_PROFILES_ACTIVE: test
+          DB_USERNAME: postgres
+          DB_PASSWORD: ${{ secrets.CI_DB_PASSWORD }}
+        run: |
+          nohup java -jar target/*.jar > springboot.log 2>&1 &
+          echo $! > springboot.pid
+
+
+      - name: Wait for Spring Boot backend
+        run: |
+          for i in {1..60}; do
+            HTTP_STATUS=$(curl --silent --output /dev/null \
+              --write-out "%{http_code}" \
+              --max-time 3 \
+              -X POST \
+              -H "Content-Type: application/json" \
+              -d '{}' \
+              http://localhost:58080/api/auth/login || true)
+
+            if [[ "$HTTP_STATUS" == "400" ||
+                  "$HTTP_STATUS" == "401" ||
+                  "$HTTP_STATUS" == "403" ]]; then
+              echo "Spring Boot authentication endpoint is responding"
+              exit 0
+            fi
+
+            if ! kill -0 "$(cat backend/springboot.pid)" 2>/dev/null; then
+              echo "Spring Boot process has stopped"
+              cat backend/springboot.log
+              exit 1
+            fi
+
+            echo "Waiting for Spring Boot... ($i/60), HTTP $HTTP_STATUS"
+            sleep 2
+          done
+
+          echo "Spring Boot did not become ready"
+          cat backend/springboot.log
+          exit 1
+
+
+
+      - name: Make Gradle wrapper executable
+        working-directory: android
+        run: chmod +x gradlew
+
+      - name: Build Android debug APK
+        working-directory: android
+        run: |
+          ./gradlew :app:assembleDebug \
+            -PbackendUrl=http://10.0.2.2:58080/api/
+
+      - name: Verify Android APK exists
+        run: |
+          APK_PATH="android/app/build/outputs/apk/debug/app-debug.apk"
+
+          if [ ! -f "$APK_PATH" ]; then
+            echo "ERROR: Android APK was not generated"
+            exit 1
+          fi
+
+          echo "Android APK generated successfully"
+          ls -lh "$APK_PATH"
+
+      - name: Install WebdriverIO and Appium
+        run: |
+          npm ci
+          npm install --global appium@3
+          appium driver install uiautomator2
+          appium --version
+          appium driver list --installed
+
+      - name: Start Android emulator and run tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          emulator-boot-timeout: 600
+          script: |
+            adb devices
+
+            adb install -r android/app/build/outputs/apk/debug/app-debug.apk
+
+            adb shell pm list packages | grep com.example.horizontravel
+
+            echo "Android emulator ready and HorizonTravel installed"
+
+            CI=true npm test

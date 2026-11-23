@@ -1,3 +1,6 @@
+
+const isCI = process.env.CI === 'true';
+
 export const config = {
     runner: 'local',
 
@@ -8,14 +11,23 @@ export const config = {
     capabilities: [{
         platformName: 'Android',
         'appium:automationName': 'UiAutomator2',
-        'appium:deviceName': 'Samsung Galaxy Tab S7',
-        'appium:udid': 'R52N80DD0NW',
+
+        'appium:deviceName': isCI
+            ? 'Android Emulator'
+            : 'Samsung Galaxy Tab S7',
+
+        ...(!isCI && {
+            'appium:udid': 'R52N80DD0NW'
+        }),
+
         'appium:appPackage': 'com.example.horizontravel',
         'appium:appActivity': '.ui.SplashActivity'
     }],
 
     logLevel: 'info',
+
     framework: 'mocha',
+
     reporters: ['spec'],
 
     mochaOpts: {
@@ -23,8 +35,8 @@ export const config = {
     },
 
     services: [
-    ['appium', {
-        command: 'appium'
-    }]
+        ['appium', {
+            command: 'appium'
+        }]
     ]
 };
