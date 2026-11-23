@@ -1,6 +1,8 @@
 
 # HorizonTravel — Android Mobile QA Automation
 
+[![HorizonTravel Mobile QA](https://github.com/exal-rom/HorizonTravelMobileQA/actions/workflows/mobile-tests.yml/badge.svg)](https://github.com/exal-rom/HorizonTravelMobileQA/actions/workflows/mobile-tests.yml)
+
 **Appium 3 · WebdriverIO v9 · JavaScript · UiAutomator2 · Mocha · GitHub Actions**
 
 A mobile test automation framework developed from scratch to demonstrate hands-on Android automation, maintainable test architecture, application integration, and continuous integration.
@@ -242,23 +244,34 @@ The database password is not committed to the repository.
 
 ### CI execution status
 
-The GitHub Actions workflow has been implemented and initial integration testing is underway.
+**Status: Operational — end-to-end Android automation successfully executed in GitHub Actions.**
 
-The first execution successfully completed:
+The GitHub Actions workflow provisions and integrates three separate repositories into a repeatable mobile testing environment.
 
-- Repository checkout
-- Java and Node.js environment setup
-- Spring Boot backend build
-- Backend startup and readiness verification
-- Android APK build
-- APK verification
-- Appium installation
+The pipeline successfully performs:
 
-Android emulator startup encountered a hardware acceleration issue on the GitHub-hosted runner.
+- Repository checkout and environment configuration
+- Java 25 and Node.js environment setup
+- PostgreSQL 17 database provisioning
+- Spring Boot backend build and startup
+- Backend readiness verification
+- Android APK compilation using Gradle
+- Android emulator provisioning with KVM hardware acceleration
+- Android APK installation
+- Appium 3 and UiAutomator2 initialization
+- WebdriverIO and Mocha automated test execution
+- Application login and Tour Guides navigation verification
 
-KVM access configuration and diagnostics have subsequently been added to the workflow.
+**Verified execution results:**
 
-**A successful end-to-end CI test execution is not yet confirmed.**
+- CI execution #3: Successful
+- CI execution #4: Successful
+- Automated test coverage: 1 end-to-end scenario
+- Latest verified result: 1 passed, 0 failed
+
+The automated scenario verifies that a tourist can authenticate successfully, reach the application's home screen, and navigate to the Tour Guides section.
+
+The initial CI integration issues involving Android emulator hardware acceleration and WebdriverIO worker initialization have been resolved.
 
 [View workflow executions](https://github.com/exal-rom/HorizonTravelMobileQA/actions)
 
@@ -304,17 +317,23 @@ It includes defining quality gates, improving delivery processes, identifying ri
 - Local Android execution on a Samsung Galaxy Tab S7
 - Environment-specific Android device configuration
 - Integration with separate Android and backend repositories
-- GitHub Actions workflow for building and executing the system
-- PostgreSQL service provisioning
+- Operational GitHub Actions CI pipeline
+- PostgreSQL 17 service provisioning
+- Spring Boot backend build and startup verification
+- Automated Android APK compilation and installation
+- Android emulator execution with KVM hardware acceleration
 - Configurable backend URL for Android CI builds
+- Successful end-to-end tourist login and Tour Guides navigation test
+- Two consecutive successful GitHub Actions workflow executions
 
 ### In progress
 
-- Completing Android emulator execution in GitHub Actions
-- Validating end-to-end CI execution
 - Expanding automated regression coverage
+- Adding negative authentication and input validation scenarios
+- Extending Tour Guides functional verification
 - Improving test reporting and execution diagnostics
 - Publishing test execution evidence and CI artifacts
+- Strengthening automated quality gates and regression feedback
 
 ## Related Repositories
 
